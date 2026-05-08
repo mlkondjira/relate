@@ -3,6 +3,7 @@ export default {
     name: 'Relate',
     slug: 'relate-app',
     version: '1.0.0',
+    scheme: 'relate-app', // Ajout du scheme pour le deep linking
     orientation: 'portrait',
     icon: './assets/icon.png',
     userInterfaceStyle: 'automatic',
