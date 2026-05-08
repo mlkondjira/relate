@@ -1,0 +1,163 @@
+// Relate — Schéma de base de données Prisma
+// PostgreSQL — toutes les tables de l'application
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Utilisateurs ──────────────────────────────────────────────
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  passwordHash  String
+  name          String
+  avatar        String?
+  pushToken     String?  // Expo push notification token
+  isOnline      Boolean  @default(false)
+  lastSeen      DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  coupleAsUser1    Couple?  @relation("CoupleUser1")
+  coupleAsUser2    Couple?  @relation("CoupleUser2")
+  sentMessages     Message[] @relation("MessageSender")
+  checkins         CheckIn[]
+  moments          Moment[]
+  cycleEntries     CycleEntry[]
+  invitesSent      CoupleInvite[] @relation("InviteSender")
+  invitesReceived  CoupleInvite[] @relation("InviteReceiver")
+
+  @@map("users")
+}
+
+// ─── Couples ───────────────────────────────────────────────────
+model Couple {
+  id        String   @id @default(uuid())
+  user1Id   String   @unique
+  user2Id   String   @unique
+  createdAt DateTime @default(now())
+
+  user1     User @relation("CoupleUser1", fields: [user1Id], references: [id], onDelete: Cascade)
+  user2     User @relation("CoupleUser2", fields: [user2Id], references: [id], onDelete: Cascade)
+
+  messages  Message[]
+  moments   Moment[]
+
+  @@map("couples")
+}
+
+// ─── Invitations couple ────────────────────────────────────────
+model CoupleInvite {
+  id         String       @id @default(uuid())
+  senderId   String
+  receiverId String?      // null si invitation par lien
+  code       String       @unique // code 6 chars pour rejoindre
+  status     InviteStatus @default(PENDING)
+  expiresAt  DateTime
+  createdAt  DateTime     @default(now())
+
+  sender     User  @relation("InviteSender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver   User? @relation("InviteReceiver", fields: [receiverId], references: [id], onDelete: SetNull)
+
+  @@map("couple_invites")
+}
+
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  CANCELLED
+}
+
+// ─── Check-ins de localisation ─────────────────────────────────
+model CheckIn {
+  id        String   @id @default(uuid())
+  userId    String
+  label     String?  // ex: "Chez moi", "Au bureau"
+  latitude  Float
+  longitude Float
+  createdAt DateTime @default(now())
+
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("checkins")
+}
+
+// ─── Messages ──────────────────────────────────────────────────
+model Message {
+  id        String      @id @default(uuid())
+  coupleId  String
+  senderId  String
+  content   String      // chiffré AES côté serveur
+  type      MessageType @default(TEXT)
+  readAt    DateTime?
+  createdAt DateTime    @default(now())
+
+  couple    Couple @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+  sender    User   @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@map("messages")
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  VOICE
+}
+
+// ─── Moments partagés ──────────────────────────────────────────
+model Moment {
+  id          String       @id @default(uuid())
+  coupleId    String
+  createdById String
+  title       String
+  description String?
+  scheduledAt DateTime
+  location    String?
+  status      MomentStatus @default(UPCOMING)
+  createdAt   DateTime     @default(now())
+
+  couple      Couple @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+  createdBy   User   @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@map("moments")
+}
+
+enum MomentStatus {
+  UPCOMING
+  PASSED
+  CANCELLED
+}
+
+// ─── Cycle menstruel (base isolée simulée via table dédiée) ────
+// Note: En production, cette table serait dans une base séparée
+// avec chiffrement AES-256 côté application avant insertion
+model CycleEntry {
+  id              String    @id @default(uuid())
+  userId          String
+  // Toutes les données sensibles sont chiffrées (AES-256-GCM)
+  // avant d'être stockées — jamais en clair
+  encryptedData   String    // JSON chiffré: {phase, notes, symptoms}
+  phase           CyclePhase
+  cycleDay        Int
+  shareWithPartner Boolean  @default(false)
+  date            DateTime
+  createdAt       DateTime  @default(now())
+
+  user            User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("cycle_entries")
+}
+
+enum CyclePhase {
+  MENSTRUAL
+  FOLLICULAR
+  OVULATION
+  LUTEAL
+}
