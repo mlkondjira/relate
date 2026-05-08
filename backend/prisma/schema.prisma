@@ -1,6 +1,7 @@
 // Relate — Schéma de base de données Prisma
 // PostgreSQL — toutes les tables de l'application
 
+// Dernière mise à jour: 2026-05-08
 generator client {
   provider = "prisma-client-js"
   binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
