@@ -36,4 +36,4 @@ COPY package.json ./
 EXPOSE 3000
 
 # Migrations automatiques au démarrage puis lancement du serveur
-CMD ["sh", "-c", "npx prisma migrate deploy && node src/server.js"]
+CMD ["sh", "-c", "npx prisma db push && node src/server.js"]
