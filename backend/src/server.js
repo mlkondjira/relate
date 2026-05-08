@@ -46,7 +46,18 @@ app.use('/api/cycle', cycleRoutes);
 app.use('/api/profile', profileRoutes);
 
 // Health check
-app.get('/health', (_req, res) => res.json({ status: 'ok', app: 'Relate API' }));
+app.get('/health', async (_req, res) => {
+  try {
+    const { PrismaClient } = require('@prisma/client');
+    const p = new PrismaClient();
+    await p.$connect();
+    await p.$disconnect();
+    res.json({ status: 'ok', database: 'connected', app: 'Relate API' });
+  } catch (err) {
+    console.error('Health check failed:', err);
+    res.status(500).json({ status: 'error', database: 'disconnected', message: err.message });
+  }
+});
 
 // ─── Gestion d'erreurs globale ────────────────────────────────
 app.use((err, _req, res, _next) => {

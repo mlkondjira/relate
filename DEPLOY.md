@@ -4,7 +4,7 @@
 - Compte [Railway](https://railway.app) ✅ fait
 - Compte [GitHub](https://github.com)
 - Node.js 20+ en local
-- `npm install -g expo-cli eas-cli`
+- `npm install -g eas-cli` (expo-cli est déprécié et ne doit plus être installé globalement)
 
 ---
 
@@ -17,7 +17,7 @@ git add .
 git commit -m "Initial commit — Relate v1.0"
 
 # Créer un repo sur github.com puis :
-git remote add origin https://github.com/TON-USERNAME/relate.git
+git remote add origin https://github.com/mlkondjira/relate.git
 git push -u origin main
 ```
 
@@ -69,7 +69,7 @@ node -e "console.log(require('crypto').randomBytes(16).toString('hex'))"
 ## Étape 5 — Vérifier le déploiement
 
 ```bash
-curl https://TON-SERVICE.up.railway.app/health
+curl https://relate-production-8af0.up.railway.app/health
 # Réponse attendue : {"status":"ok","app":"Relate API"}
 ```
 
@@ -94,10 +94,15 @@ EXPO_PUBLIC_PROJECT_ID=                                    ← voir ci-dessous
 1. [expo.dev](https://expo.dev) → créer un compte → **New Project** → nommer `relate`
 2. Copier le **Project ID** (format UUID)
 
+
+
+
+
 ### Lancer sur téléphone :
 ```bash
-npm install
-npx expo start
+npm install # ou npm install --force --legacy-peer-deps si conflits
+npx expo install --check # Pour aligner les versions avec le SDK
+npx expo start -c # Lancer en nettoyant le cache de Metro
 # Scanner le QR avec Expo Go (dispo sur App Store / Play Store)
 ```
 
